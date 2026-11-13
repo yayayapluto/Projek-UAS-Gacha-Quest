@@ -1,0 +1,13 @@
+# Agent config (tidak untuk di-commit)
+.agents/
+.scratch/
+docs/agents/
+AGENTS.md
+
+# Build artifacts
+bin/
+tests/out_last.txt
+
+# Runtime files (dihasilkan saat main)
+data/save.txt
+data/leaderboard.txt
