@@ -1,0 +1,16 @@
+1|Pedang Kayu|S|1|3
+2|Belati Besi|S|1|5
+3|Kapak Perang|S|2|9
+4|Pedang Baja|S|2|11
+5|Tombak Naga|S|3|17
+6|Katana Bayangan|S|3|19
+7|Excalibur|S|4|30
+8|Palu Dewa|S|4|28
+9|Baju Kain|A|1|2
+10|Rompi Kulit|A|1|3
+11|Zirah Besi|A|2|6
+12|Perisai Baja|A|2|7
+13|Zirah Naga|A|3|11
+14|Jubah Penyihir|A|3|10
+15|Armor Titan|A|4|18
+16|Jubah Dewa|A|4|16
