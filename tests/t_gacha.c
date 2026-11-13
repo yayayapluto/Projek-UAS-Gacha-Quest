@@ -3,48 +3,50 @@
 #include "gacha.h"
 #include "player.h"
 
-#define CEK(k) do { if (!(k)) { printf("GAGAL: %s baris %d\n", #k, __LINE__); return 1; } } while (0)
+#define CHECK(cond) do { if (!(cond)) { printf("FAIL: %s line %d\n", #cond, __LINE__); return 1; } } while (0)
 
 int main(void)
 {
-    Item katalog[MAX_ITEM];
+    Item catalog[MAX_ITEM];
     Player p;
-    int pity = 0, i, r, prevPity;
-    int jumlah[5] = { 0, 0, 0, 0, 0 };
+    int pity = 0, i, r, previousPity;
+    int counts[5] = { 0, 0, 0, 0, 0 };
 
+    /* Every fixture item is Common, so the duplicate run below is deterministic. */
     for (i = 0; i < MAX_ITEM; i++) {
-        katalog[i].id = i + 1;
-        katalog[i].rarity = (i % 4) + 1;
-        katalog[i].tipe = 'S';
-        katalog[i].power = 1;
+        catalog[i].id = i + 1;
+        catalog[i].rarity = RARITY_COMMON;
+        catalog[i].type = 'S';
+        catalog[i].power = 1;
     }
-
     pity = 0;
     for (i = 0; i < 20000; i++) {
-        prevPity = pity;
-        r = tentukanRarity(&pity);
-        CEK(r >= RARITY_COMMON && r <= RARITY_LEGENDARY);
-        CEK(pity >= 0 && pity < MAKS_PITY);
-        if (prevPity >= MAKS_PITY - 1) CEK(r >= RARITY_EPIC);
-        jumlah[r]++;
+        previousPity = pity;
+        r = rollRarity(&pity);
+        CHECK(r >= RARITY_COMMON && r <= RARITY_LEGENDARY);
+        CHECK(pity >= 0 && pity < PITY_THRESHOLD);
+        if (previousPity >= PITY_THRESHOLD - 1) CHECK(r >= RARITY_EPIC);
+        counts[r]++;
     }
-    CEK(jumlah[RARITY_COMMON] > 10500 && jumlah[RARITY_COMMON] < 12000);
-    CEK(jumlah[RARITY_RARE] > 4300 && jumlah[RARITY_RARE] < 5200);
-    CEK(jumlah[RARITY_EPIC] > 2900 && jumlah[RARITY_EPIC] < 3400);
-    CEK(jumlah[RARITY_LEGENDARY] > 500 && jumlah[RARITY_LEGENDARY] < 700);
+    CHECK(counts[RARITY_COMMON] > 10500 && counts[RARITY_COMMON] < 12000);
+    CHECK(counts[RARITY_RARE] > 4300 && counts[RARITY_RARE] < 5200);
+    CHECK(counts[RARITY_EPIC] > 2900 && counts[RARITY_EPIC] < 3400);
+    CHECK(counts[RARITY_LEGENDARY] > 500 && counts[RARITY_LEGENDARY] < 700);
 
     initPlayer(&p, "Dup");
-    p.jumlahItem = 0;
+    p.itemCount = 0;
     p.gold = 0;
-    for (i = 0; i < 100; i++)
-        tarikSekali(&p, katalog, MAX_ITEM, RARITY_COMMON);
-    CEK(p.jumlahItem == 4);
-    CEK(p.gold == 96 * HARGA_DUP_COMMON);
+    /* 1000 uniform pulls over 36 distinct Common items fill the inventory
+       (missing one id needs ~1e-13 luck) and pay duplicates afterwards. */
+    for (i = 0; i < 1000; i++)
+        pullOnce(&p, catalog, MAX_ITEM, RARITY_COMMON);
+    CHECK(p.itemCount == MAX_ITEM);
+    CHECK(p.gold == (1000 - MAX_ITEM) * DUPLICATE_PRICE_COMMON);
 
-    p.jumlahItem = 0;
+    p.itemCount = 0;
     p.inventory[0].id = 5;
-    p.jumlahItem = 1;
-    CEK(cariItemDiInventory(&p, 5) == 0);
-    CEK(cariItemDiInventory(&p, 6) == -1);
+    p.itemCount = 1;
+    CHECK(findItemInInventory(&p, 5) == 0);
+    CHECK(findItemInInventory(&p, 6) == -1);
     return 0;
 }

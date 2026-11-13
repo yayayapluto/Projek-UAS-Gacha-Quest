@@ -3,11 +3,11 @@
 
 #include "config.h"
 
-void menuGacha(Player *p, const Item katalog[], int jml);
-int tentukanRarity(int *pity);
-int cariItemDiInventory(const Player *p, int id);
-int hargaDup(int rarity);
-const char *namaRarity(int rarity);
-void tarikSekali(Player *p, const Item katalog[], int jml, int rarity);
+void gachaMenu(Player *p, const Item catalog[], int count);
+int rollRarity(int *pity);
+int findItemInInventory(const Player *p, int id);
+int duplicatePrice(int rarity);
+const char *rarityName(int rarity);
+void pullOnce(Player *p, const Item catalog[], int count, int rarity);
 
 #endif

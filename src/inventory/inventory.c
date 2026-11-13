@@ -5,148 +5,148 @@
 #include "inventory.h"
 #include "util.h"
 
-/* Menampilkan tabel inventory dengan status terpasang */
-static void tampilInventory(const Player *p)
+/* Prints the inventory table with equipped markers. */
+static void showInventory(const Player *p)
 {
-    const char *namaRarity[] = { "-", "Common", "Rare", "Epic", "Legendary" };
+    const char *rarityNames[] = { "-", "Common", "Rare", "Epic", "Legendary" };
     int i;
 
-    printf("Inventory (%d/%d)\n", p->jumlahItem, MAX_ITEM);
+    printf("Inventory (%d/%d)\n", p->itemCount, MAX_ITEM);
     printf("%-4s %-20s %-4s %-10s %-5s %s\n", "Idx", "Nama", "Tipe", "Rarity", "Power", "Terpasang");
-    for (i = 0; i < p->jumlahItem; i++) {
+    for (i = 0; i < p->itemCount; i++) {
         printf("%-4d %-20s %-4c %-10s %-5d %s\n",
-               i, p->inventory[i].nama, p->inventory[i].tipe,
-               namaRarity[p->inventory[i].rarity], p->inventory[i].power,
-               i == p->idxSenjata ? "[SENJATA]" : (i == p->idxArmor ? "[ARMOR]" : ""));
+               i, p->inventory[i].name, p->inventory[i].type,
+               rarityNames[p->inventory[i].rarity], p->inventory[i].power,
+               i == p->weaponIndex ? "[SENJATA]" : (i == p->armorIndex ? "[ARMOR]" : ""));
     }
 }
 
-/* Menggeser indeks item terpasang setelah posisi item berubah (sort atau jual) */
-void sinkronkanEquip(Player *p, int idSenjataLama, int idArmorLama)
+/* Re-locates equipped indexes after item positions change (sort or sell). */
+void syncEquipped(Player *p, int oldWeaponId, int oldArmorId)
 {
     int i;
-    p->idxSenjata = -1;
-    p->idxArmor = -1;
-    for (i = 0; i < p->jumlahItem; i++) {
-        if (idSenjataLama >= 0 && p->inventory[i].id == idSenjataLama) p->idxSenjata = i;
-        if (idArmorLama >= 0 && p->inventory[i].id == idArmorLama) p->idxArmor = i;
+    p->weaponIndex = -1;
+    p->armorIndex = -1;
+    for (i = 0; i < p->itemCount; i++) {
+        if (oldWeaponId >= 0 && p->inventory[i].id == oldWeaponId) p->weaponIndex = i;
+        if (oldArmorId >= 0 && p->inventory[i].id == oldArmorId) p->armorIndex = i;
     }
 }
 
-/* Menu inventory: lihat, urutkan, cari, equip */
-void menuInventory(Player *p)
+/* Inventory menu: view, sort, search, equip. */
+void inventoryMenu(Player *p)
 {
-    int pilih;
+    int choice;
 
     for (;;) {
-        garis();
-        tampilInventory(p);
+        printLine();
+        showInventory(p);
         printf("=== Inventory ===\n");
         printf("1. Urutkan\n");
         printf("2. Cari item\n");
         printf("3. Equip item\n");
         printf("0. Kembali\n");
-        pilih = bacaAngka("Pilih: ", 0, 3);
-        if (pilih == 0) return;
-        switch (pilih) {
+        choice = readInt("Pilih: ", 0, 3);
+        if (choice == 0) return;
+        switch (choice) {
         case 1: {
-            int mode = bacaAngka("Urutkan berdasarkan (1 rarity, 2 power, 3 nama): ", 1, 3);
-            urutkanInventory(p, mode);
+            int mode = readInt("Urutkan berdasarkan (1 rarity, 2 power, 3 nama): ", 1, 3);
+            sortInventory(p, mode);
             printf("Inventory terurut.\n");
             break;
         }
         case 2: {
-            char kata[MAX_NAMA];
-            int ketemu;
-            bacaString("Cari nama item: ", kata, MAX_NAMA);
-            ketemu = cariItemNama(p, kata);
-            if (ketemu == 0) printf("Tidak ada item yang cocok.\n");
-            else printf("Ditemukan %d item.\n", ketemu);
+            char word[MAX_NAME];
+            int found;
+            readString("Cari nama item: ", word, MAX_NAME);
+            found = searchItemByName(p, word);
+            if (found == 0) printf("Tidak ada item yang cocok.\n");
+            else printf("Ditemukan %d item.\n", found);
             break;
         }
         case 3: {
-            int idx;
-            if (p->jumlahItem == 0) {
+            int index;
+            if (p->itemCount == 0) {
                 printf("Inventory kosong.\n");
                 break;
             }
-            idx = bacaAngka("Nomor indeks item yang dipasang (999 batal): ", 0, 999);
-            if (idx == 999) break;
-            if (idx >= p->jumlahItem) {
+            index = readInt("Nomor indeks item yang dipasang (999 batal): ", 0, 999);
+            if (index == 999) break;
+            if (index >= p->itemCount) {
                 printf("Indeks tidak ada di inventory.\n");
                 break;
             }
-            equipItem(p, idx);
-            printf("%s dipasang.\n", p->inventory[idx].nama);
+            equipItem(p, index);
+            printf("%s dipasang.\n", p->inventory[index].name);
             break;
         }
         }
     }
 }
 
-/* Mengurutkan inventory: 1 rarity, 2 power menurun, 3 nama A-Z (tidak peka kapital) */
-void urutkanInventory(Player *p, int mode)
+/* Sorts the inventory: 1 rarity, 2 power descending, 3 name A-Z (case-insensitive). */
+void sortInventory(Player *p, int mode)
 {
-    int idSenjataLama = -1, idArmorLama = -1;
+    int oldWeaponId = -1, oldArmorId = -1;
     int i, j;
 
-    if (p->idxSenjata >= 0) idSenjataLama = p->inventory[p->idxSenjata].id;
-    if (p->idxArmor >= 0) idArmorLama = p->inventory[p->idxArmor].id;
-    for (i = 0; i < p->jumlahItem - 1; i++) {
-        for (j = 0; j < p->jumlahItem - 1 - i; j++) {
-            int tukar = 0;
-            char a[MAX_NAMA], b[MAX_NAMA];
+    if (p->weaponIndex >= 0) oldWeaponId = p->inventory[p->weaponIndex].id;
+    if (p->armorIndex >= 0) oldArmorId = p->inventory[p->armorIndex].id;
+    for (i = 0; i < p->itemCount - 1; i++) {
+        for (j = 0; j < p->itemCount - 1 - i; j++) {
+            int swap = 0;
+            char a[MAX_NAME], b[MAX_NAME];
             switch (mode) {
-            case 1: tukar = p->inventory[j].rarity > p->inventory[j + 1].rarity; break;
-            case 2: tukar = p->inventory[j].power < p->inventory[j + 1].power; break;
+            case 1: swap = p->inventory[j].rarity > p->inventory[j + 1].rarity; break;
+            case 2: swap = p->inventory[j].power < p->inventory[j + 1].power; break;
             case 3:
-                strncpy(a, p->inventory[j].nama, MAX_NAMA);
-                strncpy(b, p->inventory[j + 1].nama, MAX_NAMA);
-                a[MAX_NAMA - 1] = '\0'; b[MAX_NAMA - 1] = '\0';
+                strncpy(a, p->inventory[j].name, MAX_NAME);
+                strncpy(b, p->inventory[j + 1].name, MAX_NAME);
+                a[MAX_NAME - 1] = '\0'; b[MAX_NAME - 1] = '\0';
                 {
                     int k;
                     for (k = 0; a[k] != '\0'; k++) a[k] = (char)tolower((unsigned char)a[k]);
                     for (k = 0; b[k] != '\0'; k++) b[k] = (char)tolower((unsigned char)b[k]);
                 }
-                tukar = strcmp(a, b) > 0;
+                swap = strcmp(a, b) > 0;
                 break;
             }
-            if (tukar) {
+            if (swap) {
                 Item tmp = p->inventory[j];
                 p->inventory[j] = p->inventory[j + 1];
                 p->inventory[j + 1] = tmp;
             }
         }
     }
-    sinkronkanEquip(p, idSenjataLama, idArmorLama);
+    syncEquipped(p, oldWeaponId, oldArmorId);
 }
 
-/* Mencari item yang namanya memuat 'kata' (tidak peka kapital); kembalikan jumlah dan tampilkan hasil */
-int cariItemNama(const Player *p, const char *kata)
+/* Finds items whose name contains 'word' (case-insensitive); prints them and returns the count. */
+int searchItemByName(const Player *p, const char *word)
 {
-    char kecilKata[MAX_NAMA];
-    int i, k, ketemu = 0;
+    char lowerWord[MAX_NAME];
+    int i, k, found = 0;
 
-    strncpy(kecilKata, kata, MAX_NAMA - 1);
-    kecilKata[MAX_NAMA - 1] = '\0';
-    for (k = 0; kecilKata[k] != '\0'; k++) kecilKata[k] = (char)tolower((unsigned char)kecilKata[k]);
-    for (i = 0; i < p->jumlahItem; i++) {
-        char kecilNama[MAX_NAMA];
-        strncpy(kecilNama, p->inventory[i].nama, MAX_NAMA - 1);
-        kecilNama[MAX_NAMA - 1] = '\0';
-        for (k = 0; kecilNama[k] != '\0'; k++) kecilNama[k] = (char)tolower((unsigned char)kecilNama[k]);
-        if (strstr(kecilNama, kecilKata) != NULL) {
+    strncpy(lowerWord, word, MAX_NAME - 1);
+    lowerWord[MAX_NAME - 1] = '\0';
+    for (k = 0; lowerWord[k] != '\0'; k++) lowerWord[k] = (char)tolower((unsigned char)lowerWord[k]);
+    for (i = 0; i < p->itemCount; i++) {
+        char lowerName[MAX_NAME];
+        strncpy(lowerName, p->inventory[i].name, MAX_NAME - 1);
+        lowerName[MAX_NAME - 1] = '\0';
+        for (k = 0; lowerName[k] != '\0'; k++) lowerName[k] = (char)tolower((unsigned char)lowerName[k]);
+        if (strstr(lowerName, lowerWord) != NULL) {
             printf("Ditemukan: idx %d %s (tipe %c, power %d)\n",
-                   i, p->inventory[i].nama, p->inventory[i].tipe, p->inventory[i].power);
-            ketemu++;
+                   i, p->inventory[i].name, p->inventory[i].type, p->inventory[i].power);
+            found++;
         }
     }
-    return ketemu;
+    return found;
 }
 
-/* Memasang item pada slot senjata atau armor, menggantikan yang lama */
-void equipItem(Player *p, int idx)
+/* Equips the item into the weapon or armor slot, replacing the previous one. */
+void equipItem(Player *p, int index)
 {
-    if (p->inventory[idx].tipe == 'S') p->idxSenjata = idx;
-    else if (p->inventory[idx].tipe == 'A') p->idxArmor = idx;
+    if (p->inventory[index].type == 'S') p->weaponIndex = index;
+    else if (p->inventory[index].type == 'A') p->armorIndex = index;
 }

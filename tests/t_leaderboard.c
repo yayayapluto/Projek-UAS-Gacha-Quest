@@ -3,62 +3,62 @@
 #include "storage.h"
 #include "player.h"
 
-#define CEK(k) do { if (!(k)) { printf("GAGAL: %s baris %d\n", #k, __LINE__); return 1; } } while (0)
+#define CHECK(cond) do { if (!(cond)) { printf("FAIL: %s line %d\n", #cond, __LINE__); return 1; } } while (0)
 
 int main(void)
 {
     Player p;
     FILE *fp;
-    char baris[256];
-    int skor[20], i, jml = 0, urut = 1;
+    char line[256];
+    int scores[20], i, count = 0, sorted = 1;
 
     remove("data/leaderboard.txt");
 
     initPlayer(&p, "Andi");
-    p.skor = 100;
-    catatSkor(&p);
+    p.score = 100;
+    recordScore(&p);
     initPlayer(&p, "Budi");
-    p.skor = 50;
-    catatSkor(&p);
+    p.score = 50;
+    recordScore(&p);
     initPlayer(&p, "Citra");
-    p.skor = 200;
-    catatSkor(&p);
+    p.score = 200;
+    recordScore(&p);
 
     fp = fopen("data/leaderboard.txt", "r");
-    CEK(fp != NULL);
-    while (fgets(baris, sizeof baris, fp) != NULL && jml < 20) {
-        if (sscanf(baris, "%*[^|]|%*d|%d", &skor[jml]) == 1) jml++;
+    CHECK(fp != NULL);
+    while (fgets(line, sizeof line, fp) != NULL && count < 20) {
+        if (sscanf(line, "%*[^|]|%*d|%d", &scores[count]) == 1) count++;
     }
     fclose(fp);
-    CEK(jml == 3);
-    for (i = 0; i < jml - 1; i++)
-        if (skor[i] < skor[i + 1]) urut = 0;
-    CEK(urut == 1);
-    CEK(skor[0] == 200 && skor[1] == 100 && skor[2] == 50);
+    CHECK(count == 3);
+    for (i = 0; i < count - 1; i++)
+        if (scores[i] < scores[i + 1]) sorted = 0;
+    CHECK(sorted == 1);
+    CHECK(scores[0] == 200 && scores[1] == 100 && scores[2] == 50);
 
     remove("data/leaderboard.txt");
     for (i = 1; i <= 12; i++) {
-        char nama[MAX_NAMA];
-        sprintf(nama, "P%d", i);
-        initPlayer(&p, nama);
-        p.skor = i * 10;
-        catatSkor(&p);
+        char name[MAX_NAME];
+        sprintf(name, "P%d", i);
+        initPlayer(&p, name);
+        p.score = i * 10;
+        recordScore(&p);
     }
     fp = fopen("data/leaderboard.txt", "r");
-    CEK(fp != NULL);
-    jml = 0;
-    while (fgets(baris, sizeof baris, fp) != NULL) jml++;
+    CHECK(fp != NULL);
+    count = 0;
+    while (fgets(line, sizeof line, fp) != NULL) count++;
     fclose(fp);
-    CEK(jml == MAX_LEADERBOARD);
+    CHECK(count == MAX_LEADERBOARD);
 
     fp = fopen("data/leaderboard.txt", "r");
-    jml = 0;
-    while (fgets(baris, sizeof baris, fp) != NULL && jml < 20) {
-        if (sscanf(baris, "%*[^|]|%*d|%d", &skor[jml]) == 1) jml++;
+    count = 0;
+    while (fgets(line, sizeof line, fp) != NULL && count < 20) {
+        if (sscanf(line, "%*[^|]|%*d|%d", &scores[count]) == 1) count++;
     }
     fclose(fp);
-    CEK(skor[0] == 120 && skor[MAX_LEADERBOARD - 1] == 30);
+    CHECK(scores[0] == 120 && scores[MAX_LEADERBOARD - 1] == 30);
 
-    tampilLeaderboard();
+    showLeaderboard();
     return 0;
 }

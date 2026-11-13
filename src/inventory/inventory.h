@@ -3,10 +3,10 @@
 
 #include "config.h"
 
-void menuInventory(Player *p);
-void urutkanInventory(Player *p, int mode);
-int cariItemNama(const Player *p, const char *kata);
-void equipItem(Player *p, int idx);
-void sinkronkanEquip(Player *p, int idSenjataLama, int idArmorLama);
+void inventoryMenu(Player *p);
+void sortInventory(Player *p, int mode);
+int searchItemByName(const Player *p, const char *word);
+void equipItem(Player *p, int index);
+void syncEquipped(Player *p, int oldWeaponId, int oldArmorId);
 
 #endif

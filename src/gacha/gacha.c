@@ -4,7 +4,7 @@
 #include "gacha.h"
 #include "util.h"
 
-const char *namaRarity(int rarity)
+const char *rarityName(int rarity)
 {
     switch (rarity) {
     case RARITY_COMMON: return "Common";
@@ -15,28 +15,28 @@ const char *namaRarity(int rarity)
     return "?";
 }
 
-int hargaDup(int rarity)
+int duplicatePrice(int rarity)
 {
     switch (rarity) {
-    case RARITY_COMMON: return HARGA_DUP_COMMON;
-    case RARITY_RARE: return HARGA_DUP_RARE;
-    case RARITY_EPIC: return HARGA_DUP_EPIC;
-    case RARITY_LEGENDARY: return HARGA_DUP_LEGENDARY;
+    case RARITY_COMMON: return DUPLICATE_PRICE_COMMON;
+    case RARITY_RARE: return DUPLICATE_PRICE_RARE;
+    case RARITY_EPIC: return DUPLICATE_PRICE_EPIC;
+    case RARITY_LEGENDARY: return DUPLICATE_PRICE_LEGENDARY;
     }
     return 0;
 }
 
-/* Sequential search item berdasarkan ID di inventory; -1 jika tidak ada */
-int cariItemDiInventory(const Player *p, int id)
+/* Sequential search by item ID in the inventory; -1 when absent. */
+int findItemInInventory(const Player *p, int id)
 {
     int i;
-    for (i = 0; i < p->jumlahItem; i++)
+    for (i = 0; i < p->itemCount; i++)
         if (p->inventory[i].id == id) return i;
     return -1;
 }
 
-/* Menentukan rarity dari rand()%100+1 dengan pity; mengubah *pity */
-int tentukanRarity(int *pity)
+/* Rolls rarity from rand() % 100 + 1 and applies pity; updates *pity. */
+int rollRarity(int *pity)
 {
     int roll = rand() % 100 + 1;
     int r;
@@ -50,7 +50,7 @@ int tentukanRarity(int *pity)
         *pity = 0;
     } else {
         (*pity)++;
-        if (*pity >= MAKS_PITY) {
+        if (*pity >= PITY_THRESHOLD) {
             r = RARITY_EPIC;
             *pity = 0;
         }
@@ -58,64 +58,64 @@ int tentukanRarity(int *pity)
     return r;
 }
 
-/* Satu tarikan: pilih item acak sesuai rarity, duplikat jadi gold; tampilkan hasil */
-void tarikSekali(Player *p, const Item katalog[], int jml, int rarity)
+/* One pull: pick a random item of the given rarity, convert duplicates to gold, print the result. */
+void pullOnce(Player *p, const Item catalog[], int count, int rarity)
 {
-    Item kandidat[MAX_ITEM];
-    int jmlKandidat = 0, i, idx, dipilih;
+    Item candidates[MAX_ITEM];
+    int candidateCount = 0, i, index, picked;
 
-    for (i = 0; i < jml; i++)
-        if (katalog[i].rarity == rarity) {
-            kandidat[jmlKandidat] = katalog[i];
-            jmlKandidat++;
+    for (i = 0; i < count; i++)
+        if (catalog[i].rarity == rarity) {
+            candidates[candidateCount] = catalog[i];
+            candidateCount++;
         }
-    if (jmlKandidat == 0) return;
-    dipilih = rand() % jmlKandidat;
-    idx = cariItemDiInventory(p, kandidat[dipilih].id);
-    if (idx >= 0) {
-        int harga = hargaDup(kandidat[dipilih].rarity);
-        p->gold += harga;
-        printf("  [%s] %s -> DUPLIKAT, jadi +%d gold\n", namaRarity(rarity), kandidat[dipilih].nama, harga);
-    } else if (p->jumlahItem < MAX_ITEM) {
-        p->inventory[p->jumlahItem] = kandidat[dipilih];
-        p->jumlahItem++;
-        printf("  [%s] %s (power %d) -> baru!\n", namaRarity(rarity), kandidat[dipilih].nama, kandidat[dipilih].power);
+    if (candidateCount == 0) return;
+    picked = rand() % candidateCount;
+    index = findItemInInventory(p, candidates[picked].id);
+    if (index >= 0) {
+        int price = duplicatePrice(candidates[picked].rarity);
+        p->gold += price;
+        printf("  [%s] %s -> DUPLIKAT, jadi +%d gold\n", rarityName(rarity), candidates[picked].name, price);
+    } else if (p->itemCount < MAX_ITEM) {
+        p->inventory[p->itemCount] = candidates[picked];
+        p->itemCount++;
+        printf("  [%s] %s (power %d) -> baru!\n", rarityName(rarity), candidates[picked].name, candidates[picked].power);
     }
 }
 
-/* Menu gacha: tarikan 1x, 10x, atau kembali */
-void menuGacha(Player *p, const Item katalog[], int jml)
+/* Gacha menu: one pull, ten pulls, or back. */
+void gachaMenu(Player *p, const Item catalog[], int count)
 {
-    int pilih;
+    int choice;
 
     for (;;) {
-        garis();
+        printLine();
         printf("=== Gacha ===\n");
-        printf("Gold: %d | Pity: %d/%d | Total pull: %d\n", p->gold, p->pity, MAKS_PITY, p->totalPull);
-        printf("1. Tarikan 1x (%d gold)\n", BIAYA_PULL);
-        printf("2. Tarikan 10x (%d gold)\n", BIAYA_PULL10);
+        printf("Gold: %d | Pity: %d/%d | Total pull: %d\n", p->gold, p->pity, PITY_THRESHOLD, p->totalPull);
+        printf("1. Tarikan 1x (%d gold)\n", PULL_COST);
+        printf("2. Tarikan 10x (%d gold)\n", PULL10_COST);
         printf("0. Kembali\n");
-        pilih = bacaAngka("Pilih: ", 0, 2);
-        if (pilih == 0) return;
-        if (pilih == 1) {
-            if (p->gold < BIAYA_PULL) {
-                printf("Gold kurang! Tarikan 1x butuh %d gold.\n", BIAYA_PULL);
+        choice = readInt("Pilih: ", 0, 2);
+        if (choice == 0) return;
+        if (choice == 1) {
+            if (p->gold < PULL_COST) {
+                printf("Gold kurang! Tarikan 1x butuh %d gold.\n", PULL_COST);
                 continue;
             }
-            p->gold -= BIAYA_PULL;
+            p->gold -= PULL_COST;
             p->totalPull++;
-            tarikSekali(p, katalog, jml, tentukanRarity(&p->pity));
+            pullOnce(p, catalog, count, rollRarity(&p->pity));
         } else {
             int i;
-            if (p->gold < BIAYA_PULL10) {
-                printf("Gold kurang! Tarikan 10x butuh %d gold.\n", BIAYA_PULL10);
+            if (p->gold < PULL10_COST) {
+                printf("Gold kurang! Tarikan 10x butuh %d gold.\n", PULL10_COST);
                 continue;
             }
-            p->gold -= BIAYA_PULL10;
+            p->gold -= PULL10_COST;
             printf("Hasil tarikan 10x:\n");
             for (i = 0; i < 10; i++) {
                 p->totalPull++;
-                tarikSekali(p, katalog, jml, tentukanRarity(&p->pity));
+                pullOnce(p, catalog, count, rollRarity(&p->pity));
             }
         }
     }

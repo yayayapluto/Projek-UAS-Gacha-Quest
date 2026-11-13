@@ -3,7 +3,7 @@
 
 #include "config.h"
 
-void mulaiBattle(Player *p, const Monster m[], int jml);
-int hitungDamage(int atk, int def);
+void startBattle(Player *p, const Monster m[], int count);
+int calculateDamage(int atk, int def);
 
 #endif

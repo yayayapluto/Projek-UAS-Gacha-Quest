@@ -1,5 +1,5 @@
 #!/bin/sh
-# Menjalankan semua pengujian Gacha Quest: 15 skenario bagian 15 PRD.
+# Menjalankan semua pengujian Gacha Quest: driver C plus skenario menu bagian 15 PRD.
 # Pemakaian: sh tests/run_tests.sh [opsi-sanitizer-tambahan]
 set -u
 
@@ -69,12 +69,13 @@ $CC $CFLAGS $SAN -o bin/t_leaderboard tests/t_leaderboard.c $LIB
 $CC $CFLAGS $SAN -o bin/t_dungeon tests/t_dungeon.c $LIB
 $CC $CFLAGS $SAN -o bin/game main.c $LIB
 
-echo "=== Pengujian otomatis 15 skenario ==="
+echo "=== Pengujian otomatis ==="
 rm -f data/leaderboard.txt
 
 driver "S08 urut & cari inventory" bin/t_inventory
 driver "S06/S07 rarity, pity, duplikat" bin/t_gacha
-driver "S12/S14 BFS, DFS, peta valid/invalid" bin/t_dungeon
+driver "S12/S14 dungeon prosedur: seed deterministik, DFS & BFS" bin/t_dungeon
+
 driver "S10 save-load round trip" bin/t_storage
 driver "S15 leaderboard urut & top 10" bin/t_leaderboard
 
@@ -98,6 +99,14 @@ skenario "S11 save.txt dirusak" tests/in_s11.txt "Gagal memuat"
 if [ -f data/save.uji.bak ]; then mv -f data/save.uji.bak data/save.txt; else rm -f data/save.txt; fi
 skenario "S12 gerak ke tembok" tests/in_s12.txt "Tembok! Tidak bisa lewat."
 skenario "S13 hint gold kurang" tests/in_s13.txt "Gold kurang, hint butuh 30 gold"
+
+skenario "S16 seed dunia diminta saat game baru" tests/in_s16.txt "dibangun dari seed 777"
+hits=$(grep -c "dibangun dari seed 777" tests/out_last.txt)
+if [ "$hits" -eq 2 ]; then
+    lulus "S16 seed yang sama dipakai lagi setelah Lanjutkan"
+else
+    gagal "S16 seed yang sama dipakai lagi setelah Lanjutkan (ditemukan $hits kali)"
+fi
 
 echo ""
 echo "=== Ringkasan: $PASS lulus, $FAIL gagal ==="

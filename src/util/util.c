@@ -4,51 +4,51 @@
 #include <ctype.h>
 #include "util.h"
 
-/* Membaca satu baris stdin; mengembalikan 1 jika ada data, 0 jika EOF */
-int bacaBaris(char *buf, int maks)
+/* Reads one line from stdin; returns 1 when data is available, 0 on EOF. */
+int readLine(char *buf, int max)
 {
-    if (fgets(buf, maks, stdin) == NULL) return 0;
+    if (fgets(buf, max, stdin) == NULL) return 0;
     buf[strcspn(buf, "\r\n")] = '\0';
     return 1;
 }
 
-int bacaAngka(const char *prompt, int min, int max)
+int readInt(const char *prompt, int min, int max)
 {
     char buf[256];
-    char *akhir;
-    long nilai;
+    char *end;
+    long value;
 
     for (;;) {
         printf("%s", prompt);
-        if (!bacaBaris(buf, sizeof buf)) {
+        if (!readLine(buf, sizeof buf)) {
             printf("Input berakhir (EOF), memakai nilai %d.\n", min);
             return min;
         }
-        nilai = strtol(buf, &akhir, 10);
-        if (akhir == buf) {
+        value = strtol(buf, &end, 10);
+        if (end == buf) {
             printf("Input tidak valid, masukkan angka %d sampai %d.\n", min, max);
             continue;
         }
-        while (*akhir != '\0' && isspace((unsigned char)*akhir)) akhir++;
-        if (*akhir != '\0') {
+        while (*end != '\0' && isspace((unsigned char)*end)) end++;
+        if (*end != '\0') {
             printf("Input tidak valid, masukkan angka %d sampai %d.\n", min, max);
             continue;
         }
-        if (nilai < min || nilai > max) {
+        if (value < min || value > max) {
             printf("Angka harus %d sampai %d.\n", min, max);
             continue;
         }
-        return (int)nilai;
+        return (int)value;
     }
 }
 
-void bacaString(const char *prompt, char *out, int maks)
+void readString(const char *prompt, char *out, int max)
 {
     char buf[256];
     out[0] = '\0';
     for (;;) {
         printf("%s", prompt);
-        if (!bacaBaris(buf, sizeof buf)) {
+        if (!readLine(buf, sizeof buf)) {
             printf("Input berakhir (EOF).\n");
             return;
         }
@@ -56,13 +56,13 @@ void bacaString(const char *prompt, char *out, int maks)
             printf("Input tidak boleh kosong.\n");
             continue;
         }
-        strncpy(out, buf, (size_t)maks - 1);
-        out[maks - 1] = '\0';
+        strncpy(out, buf, (size_t)max - 1);
+        out[max - 1] = '\0';
         return;
     }
 }
 
-void bersihkanLayar(void)
+void clearScreen(void)
 {
 #ifdef _WIN32
     system("cls");
@@ -71,12 +71,12 @@ void bersihkanLayar(void)
 #endif
 }
 
-void garis(void)
+void printLine(void)
 {
     printf("------------------------------\n");
 }
 
-/* Menutup program secara rapi: goodbye, flush semua output, tanpa sisa loop */
+/* Single exit path: goodbye message, then flush all output. */
 void shutdownGame(void)
 {
     printf("Terima kasih sudah bermain Gacha Quest!\n");

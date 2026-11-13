@@ -3,11 +3,11 @@
 
 #include "config.h"
 
-int muatKatalog(const char *file, Item k[]);
-int muatMonster(const char *file, Monster m[]);
-int simpanGame(const Player *p);
-int muatGame(Player *p, const Item k[], int jml);
-void catatSkor(const Player *p);
-void tampilLeaderboard(void);
+int loadCatalog(const char *file, Item items[]);
+int loadMonsters(const char *file, Monster monsters[]);
+int saveGame(const Player *p);
+int loadGame(Player *p, const Item items[], int count);
+void recordScore(const Player *p);
+void showLeaderboard(void);
 
 #endif

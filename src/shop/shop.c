@@ -6,72 +6,72 @@
 #include "inventory.h"
 #include "gacha.h"
 
-/* Menu shop: beli potion atau jual item */
-void menuShop(Player *p)
+/* Shop menu: buy potions or sell items. */
+void shopMenu(Player *p)
 {
-    int pilih;
+    int choice;
 
     for (;;) {
-        garis();
+        printLine();
         printf("=== Shop ===\n");
-        printf("Gold: %d | Potion: %d/%d\n", p->gold, p->potion, MAKS_POTION);
-        printf("1. Beli potion (%d gold)\n", BIAYA_POTION);
+        printf("Gold: %d | Potion: %d/%d\n", p->gold, p->potion, MAX_POTION);
+        printf("1. Beli potion (%d gold)\n", POTION_COST);
         printf("2. Jual item\n");
         printf("0. Kembali\n");
-        pilih = bacaAngka("Pilih: ", 0, 2);
-        if (pilih == 0) return;
-        switch (pilih) {
+        choice = readInt("Pilih: ", 0, 2);
+        if (choice == 0) return;
+        switch (choice) {
         case 1: {
-            int maksBeli, jumlah;
-            if (p->potion >= MAKS_POTION) {
-                printf("Stok potion sudah penuh (maks %d).\n", MAKS_POTION);
+            int maxBuy, amount;
+            if (p->potion >= MAX_POTION) {
+                printf("Stok potion sudah penuh (maks %d).\n", MAX_POTION);
                 break;
             }
-            maksBeli = (MAKS_POTION - p->potion) < (p->gold / BIAYA_POTION)
-                       ? (MAKS_POTION - p->potion) : (p->gold / BIAYA_POTION);
-            if (maksBeli == 0) {
+            maxBuy = (MAX_POTION - p->potion) < (p->gold / POTION_COST)
+                     ? (MAX_POTION - p->potion) : (p->gold / POTION_COST);
+            if (maxBuy == 0) {
                 printf("Gold tidak cukup untuk membeli potion.\n");
                 break;
             }
-            jumlah = bacaAngka("Jumlah potion yang dibeli: ", 1, maksBeli);
-            p->gold -= jumlah * BIAYA_POTION;
-            p->potion += jumlah;
-            printf("Beli %d potion. Gold: %d, Potion: %d.\n", jumlah, p->gold, p->potion);
+            amount = readInt("Jumlah potion yang dibeli: ", 1, maxBuy);
+            p->gold -= amount * POTION_COST;
+            p->potion += amount;
+            printf("Beli %d potion. Gold: %d, Potion: %d.\n", amount, p->gold, p->potion);
             break;
         }
         case 2: {
-            int idSenjataLama = -1, idArmorLama = -1;
-            int idx, i;
-            if (p->jumlahItem == 0) {
+            int oldWeaponId = -1, oldArmorId = -1;
+            int index, i;
+            if (p->itemCount == 0) {
                 printf("Inventory kosong, tidak ada yang bisa dijual.\n");
                 break;
             }
             printf("%-4s %-20s %-10s %-5s %s\n", "Idx", "Nama", "Rarity", "Power", "Harga jual");
-            for (i = 0; i < p->jumlahItem; i++) {
+            for (i = 0; i < p->itemCount; i++) {
                 printf("%-4d %-20s %-10s %-5d %d\n",
-                       i, p->inventory[i].nama, namaRarity(p->inventory[i].rarity),
-                       p->inventory[i].power, hargaDup(p->inventory[i].rarity));
+                       i, p->inventory[i].name, rarityName(p->inventory[i].rarity),
+                       p->inventory[i].power, duplicatePrice(p->inventory[i].rarity));
             }
-            idx = bacaAngka("Nomor indeks item yang dijual (999 batal): ", 0, 999);
-            if (idx == 999) break;
-            if (idx >= p->jumlahItem) {
+            index = readInt("Nomor indeks item yang dijual (999 batal): ", 0, 999);
+            if (index == 999) break;
+            if (index >= p->itemCount) {
                 printf("Indeks tidak ada di inventory.\n");
                 break;
             }
-            if (idx == p->idxSenjata || idx == p->idxArmor) {
+            if (index == p->weaponIndex || index == p->armorIndex) {
                 printf("Item sedang terpasang, tidak bisa dijual.\n");
                 break;
             }
             {
-                int harga = hargaDup(p->inventory[idx].rarity);
-                if (p->idxSenjata >= 0) idSenjataLama = p->inventory[p->idxSenjata].id;
-                if (p->idxArmor >= 0) idArmorLama = p->inventory[p->idxArmor].id;
-                p->gold += harga;
-                printf("Terjual: %s +%d gold.\n", p->inventory[idx].nama, harga);
-                for (i = idx; i < p->jumlahItem - 1; i++)
+                int price = duplicatePrice(p->inventory[index].rarity);
+                if (p->weaponIndex >= 0) oldWeaponId = p->inventory[p->weaponIndex].id;
+                if (p->armorIndex >= 0) oldArmorId = p->inventory[p->armorIndex].id;
+                p->gold += price;
+                printf("Terjual: %s +%d gold.\n", p->inventory[index].name, price);
+                for (i = index; i < p->itemCount - 1; i++)
                     p->inventory[i] = p->inventory[i + 1];
-                p->jumlahItem--;
-                sinkronkanEquip(p, idSenjataLama, idArmorLama);
+                p->itemCount--;
+                syncEquipped(p, oldWeaponId, oldArmorId);
             }
             break;
         }

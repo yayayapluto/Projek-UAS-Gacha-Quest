@@ -2,55 +2,68 @@
 
 ## Gambaran umum
 
-Peta dungeon adalah kotak berisi huruf: `#` tembok, `.` jalan, `S` start,
-`T` treasure, `E` exit. Semua pemrosesan memakai array 2D berukuran tetap
-(20 x 40) tanpa rekursi.
+Dungeon sekarang berupa dunia prosedural yang dibangun dari seed. Isi sel
+dihitung dengan `dungeonCell(seed, x, y)`: koridor terbuka pada `y = 1 (mod 4)`
+dan poros pada `x = 1 (mod 6)`, sedangkan treasure muncul di sekitar satu dari
+89 sel lantai. Karena tidak ada peta di memori yang ukurannya tetap, BFS dan DFS
+bekerja pada cache area 80 x 80 sel (`AREA_MAX`) yang dihitung ulang setiap
+pemain berpindah chunk.
+
+Simbol yang dilihat pemain: `#` tembok, `.` jalan, `$` treasure, `P` pemain,
+`*` jalur hint. Titik start dunia selalu `(1,1)`.
 
 ## BFS (jalur terpendek, untuk Hint)
 
-BFS (Breadth-First Search) menjelajah peta per lapisan: dulu semua sel yang
+BFS (Breadth-First Search) menjelajah area per lapisan: dulu semua sel yang
 jaraknya 1 langkah, lalu yang jaraknya 2 langkah, dst. Karena urutannya per
-lapisan, pertama kali sel `E` ditemukan pasti lewat jalur terpendek.
+lapisan, sel target pertama yang ditemukan pasti lewat jalur terpendek.
 
 Struktur data yang dipakai (dalam `dungeon.c`):
 
-- `queue` — array berisi `Titik` (baris, kolom), dengan dua penunjuk
-  `front` (depan) dan `rear` (belakang). Tidak ada malloc.
-- `dikunjungi[baris][kolom]` — tanda sel yang pernah dimasukkan antrian supaya
-  tidak diproses dua kali.
-- `asal[baris][kolom]` — menyimpan sel asal setiap sel, untuk merekonstruksi
-  jalur.
+- `queue`: array berisi `Point` (row, col), dengan dua penunjuk `front` dan
+  `rear`. Tidak ada malloc.
+- `visited[row][col]`: tanda sel yang pernah dimasukkan antrian supaya tidak
+  diproses dua kali.
+- `parent[row][col]`: sel asal setiap sel, untuk merekonstruksi jalur.
 
 Langkah BFS:
 
 1. Masukkan sel awal ke antrian, tandai dikunjungi.
 2. Selama `front < rear`: ambil sel paling depan (`front++`).
-3. Cek 4 tetangga (atas, bawah, kiri, kanan). Tetangga yang bukan `#`, dalam
-   batas peta, dan belum dikunjungi: tandai, catat `asal`, masukkan ke belakang
-   antrian (`rear++`).
-4. Jika sel yang ditemukan adalah `E`, kembali mundur lewat `asal` sampai sel
-   awal; hasilnya dibalik menjadi jalur dari awal ke `E`.
+3. Cek 4 tetangga (atas, bawah, kiri, kanan). Tetangga yang bukan `#`, masih di
+   dalam area, dan belum dikunjungi: tandai, catat `parent`, masukkan ke
+   belakang antrian (`rear++`).
+4. Jika sel yang ditemukan berisi `T`, mundur lewat `parent` sampai sel awal,
+   lalu balik urutannya menjadi jalur dari awal ke target.
 
-Dipakai di dua tempat:
+Dipakai di satu tempat:
 
-- **Hint (tombol H):** jalur dari posisi pemain sekarang ke `E` digambar
-  dengan `*` pada tampilan saja. Biaya 30 gold, maks 3x per kunjungan.
-- **Batas langkah:** panjang jalur terpendek dari `S` ke `E` dikali 2 menjadi
-  maksimum langkah pemain.
+- **Hint (tombol H):** BFS mencari treasure terdekat dari posisi pemain, bukan
+  pintu keluar, karena dungeon tidak punya exit. Jalurnya digambar `*` pada
+  tampilan saja. Biaya 30 gold, maks 3x per kunjungan.
 
-## DFS (validasi peta)
+Fungsi publiknya `bfsShortestPath`, dipakai juga oleh driver uji untuk mengukur
+jalur dari start ke ujung koridor.
+
+## DFS (validasi area awal)
 
 DFS (Depth-First Search) menjelajah sedalam mungkin sebelum mundur. Di program
-ini DFS hanya menjawab satu pertanyaan: "apakah `E` bisa dicapai dari `S`?"
+ini DFS menjawab satu pertanyaan: apakah ujung koridor area awal bisa dicapai
+dari titik start?
 
 Karena rekursi dilarang, DFS memakai `stack` dari array:
 
-1. Tekan sel `S` ke stack, tandai dikunjungi.
+1. Tekan sel start ke stack, tandai dikunjungi.
 2. Selama stack tidak kosong: ambil sel paling atas (`top--`).
-3. Jika sel itu adalah `E`, jawab: peta valid.
+3. Jika sel itu sama dengan target, jawab: tersambung.
 4. Tekan semua tetangga yang jalan dan belum dikunjungi ke stack.
-5. Jika stack kosong dan `E` tidak pernah ditemukan, peta ditolak dan peta itu
-   tidak muncul di menu dungeon.
+5. Jika stack kosong dan target tidak pernah ditemukan, area awal dianggap
+   tidak tersambung.
+
+Pesan hasilnya muncul di baris status dungeon: "Area awal tersambung dari titik
+awal sampai ujung koridor (DFS)" atau "Area awal tidak tersambung". Fungsi ini tidak
+menolak peta, karena peta memang tidak dimuat dari file lagi. Ia menjadi
+pemeriksaan bahwa pola koridor dari seed tidak memutus area awal.
 
 ## Bedanya
 
@@ -59,4 +72,4 @@ Karena rekursi dilarang, DFS memakai `stack` dari array:
 | Tujuan | jalur terpendek | sekadar bisa dicapai atau tidak |
 | Struktur data | antrian (queue array, front/rear) | tumpukan (stack array) |
 | Urutan jelajah | per lapisan (dekatan dulu) | sedalam mungkin dulu |
-| Dipakai untuk | Hint H dan batas langkah | validasi peta saat dimuat |
+| Dipakai untuk | Hint H dan pengujian jalur | validasi area awal |

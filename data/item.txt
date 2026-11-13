@@ -1,16 +1,36 @@
-1|Pedang Kayu|S|1|3
-2|Belati Besi|S|1|5
-3|Kapak Perang|S|2|9
-4|Pedang Baja|S|2|11
-5|Tombak Naga|S|3|17
-6|Katana Bayangan|S|3|19
-7|Excalibur|S|4|30
-8|Palu Dewa|S|4|28
-9|Baju Kain|A|1|2
-10|Rompi Kulit|A|1|3
-11|Zirah Besi|A|2|6
-12|Perisai Baja|A|2|7
-13|Zirah Naga|A|3|11
-14|Jubah Penyihir|A|3|10
-15|Armor Titan|A|4|18
-16|Jubah Dewa|A|4|16
+1|Wooden Sword|S|1|3
+2|Iron Dagger|S|1|5
+3|Bone Blade|S|1|7
+4|Copper Axe|S|1|8
+5|Hunter Bow|S|1|9
+6|Steel Mace|S|1|10
+7|War Axe|S|2|12
+8|Silver Saber|S|2|14
+9|Knight Spear|S|2|16
+10|Runed Falchion|S|2|18
+11|Twin Fangs|S|2|20
+12|Storm Hammer|S|2|22
+13|Shadow Katana|S|3|24
+14|Dragon Spear|S|3|27
+15|Void Reaper|S|3|30
+16|Thunder Halberd|S|3|33
+17|Excalibur|S|4|40
+18|Godhammer|S|4|45
+19|Cloth Tunic|A|1|2
+20|Leather Vest|A|1|3
+21|Studded Guard|A|1|5
+22|Chainmail|A|1|6
+23|Bone Shield|A|1|7
+24|Scale Cuirass|A|1|8
+25|Iron Plate|A|2|10
+26|Silver Aegis|A|2|12
+27|Knight Bulwark|A|2|14
+28|Dragonscale Mail|A|2|16
+29|Titan Plate|A|2|18
+30|Runewarded Cloak|A|2|20
+31|Wyrm Armor|A|3|23
+32|Phantom Shroud|A|3|26
+33|Storm Bulwark|A|3|29
+34|Abyssal Carapace|A|3|32
+35|Titan Aegis|A|4|36
+36|Divine Mantle|A|4|40

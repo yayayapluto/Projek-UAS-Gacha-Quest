@@ -3,6 +3,6 @@
 
 #include "config.h"
 
-void menuShop(Player *p);
+void shopMenu(Player *p);
 
 #endif

@@ -2,17 +2,16 @@
 #include "config.h"
 #include "battle.h"
 
-#define CEK(k) do { if (!(k)) { printf("GAGAL: %s baris %d\n", #k, __LINE__); return 1; } } while (0)
+#define CHECK(cond) do { if (!(cond)) { printf("FAIL: %s line %d\n", #cond, __LINE__); return 1; } } while (0)
 
 int main(void)
 {
     int i, dmg;
-
     for (i = 0; i < 1000; i++) {
-        dmg = hitungDamage(10, 3);
-        CEK(dmg >= 7 && dmg <= 10);
-        dmg = hitungDamage(5, 20);
-        CEK(dmg >= 1 && dmg <= 4);
+        dmg = calculateDamage(10, 3);
+        CHECK(dmg >= 7 && dmg <= 10);
+        dmg = calculateDamage(5, 20);
+        CHECK(dmg >= 1 && dmg <= 4);
     }
     return 0;
 }

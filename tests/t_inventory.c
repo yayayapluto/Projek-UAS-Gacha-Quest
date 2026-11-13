@@ -4,60 +4,62 @@
 #include "inventory.h"
 #include "player.h"
 
-#define CEK(k) do { if (!(k)) { printf("GAGAL: %s baris %d\n", #k, __LINE__); return 1; } } while (0)
+#define CHECK(cond) do { if (!(cond)) { printf("FAIL: %s line %d\n", #cond, __LINE__); return 1; } } while (0)
 
-static void tambah(Player *p, int id, const char *nama, char tipe, int rarity, int power)
+static void addItem(Player *p, int id, const char *name, char type, int rarity, int power)
 {
-    p->inventory[p->jumlahItem].id = id;
-    strncpy(p->inventory[p->jumlahItem].nama, nama, MAX_NAMA - 1);
-    p->inventory[p->jumlahItem].nama[MAX_NAMA - 1] = '\0';
-    p->inventory[p->jumlahItem].tipe = tipe;
-    p->inventory[p->jumlahItem].rarity = rarity;
-    p->inventory[p->jumlahItem].power = power;
-    p->jumlahItem++;
+    p->inventory[p->itemCount].id = id;
+    strncpy(p->inventory[p->itemCount].name, name, MAX_NAME - 1);
+    p->inventory[p->itemCount].name[MAX_NAME - 1] = '\0';
+    p->inventory[p->itemCount].type = type;
+    p->inventory[p->itemCount].rarity = rarity;
+    p->inventory[p->itemCount].power = power;
+    p->itemCount++;
 }
 
 int main(void)
 {
     Player p;
-    int ketemu;
+    int found;
 
     initPlayer(&p, "Inv");
-    tambah(&p, 1, "Pedang Kayu", 'S', 1, 3);
-    tambah(&p, 7, "Excalibur", 'S', 4, 30);
-    tambah(&p, 5, "Tombak Naga", 'S', 3, 17);
-    tambah(&p, 9, "Baju Kain", 'A', 1, 2);
-    tambah(&p, 11, "zirah besi", 'A', 2, 6);
+    addItem(&p, 1, "Wooden Sword", 'S', 1, 3);
+    addItem(&p, 17, "Excalibur", 'S', 4, 40);
+    addItem(&p, 14, "Shadow Katana", 'S', 3, 24);
+    addItem(&p, 19, "Cloth Tunic", 'A', 1, 2);
+    addItem(&p, 25, "Iron Plate", 'A', 2, 10);
 
-    urutkanInventory(&p, 2);
-    CEK(p.inventory[0].id == 7 && p.inventory[1].id == 5 && p.inventory[4].id == 9);
+    /* power descending: Excalibur, Shadow Katana, Iron Plate, Wooden Sword, Cloth Tunic */
+    sortInventory(&p, 2);
+    CHECK(p.inventory[0].id == 17 && p.inventory[1].id == 14 && p.inventory[4].id == 19);
 
-    urutkanInventory(&p, 1);
-    CEK(p.inventory[0].id == 1 && p.inventory[2].id == 11 && p.inventory[4].id == 7);
+    /* rarity ascending, stable for equal rarity: 1,19 | 25 | 14 | 17 */
+    sortInventory(&p, 1);
+    CHECK(p.inventory[0].id == 1 && p.inventory[2].id == 25 && p.inventory[4].id == 17);
 
-    urutkanInventory(&p, 3);
-    CEK(strcmp(p.inventory[0].nama, "Baju Kain") == 0);
-    CEK(strcmp(p.inventory[1].nama, "Excalibur") == 0);
-    CEK(strcmp(p.inventory[4].nama, "zirah besi") == 0);
+    /* name A-Z */
+    sortInventory(&p, 3);
+    CHECK(strcmp(p.inventory[0].name, "Cloth Tunic") == 0);
+    CHECK(strcmp(p.inventory[1].name, "Excalibur") == 0);
+    CHECK(strcmp(p.inventory[4].name, "Wooden Sword") == 0);
 
+    /* Name A-Z order: Cloth Tunic, Excalibur, Iron Plate, Shadow Katana, Wooden Sword. */
     equipItem(&p, 1);
-    CEK(p.idxSenjata == 1);
-    equipItem(&p, 4);
-    CEK(p.idxArmor == 4);
+    CHECK(p.weaponIndex == 1);
     equipItem(&p, 2);
-    CEK(p.idxSenjata == 2);
+    CHECK(p.armorIndex == 2);
 
-    urutkanInventory(&p, 1);
-    CEK(strcmp(p.inventory[p.idxSenjata].nama, "Pedang Kayu") == 0);
-    CEK(strcmp(p.inventory[p.idxArmor].nama, "zirah besi") == 0);
+    sortInventory(&p, 1);
+    CHECK(strcmp(p.inventory[p.weaponIndex].name, "Excalibur") == 0);
+    CHECK(strcmp(p.inventory[p.armorIndex].name, "Iron Plate") == 0);
 
-    ketemu = cariItemNama(&p, "PEDANG");
-    CEK(ketemu == 1);
-    ketemu = cariItemNama(&p, "kayu");
-    CEK(ketemu == 1);
-    ketemu = cariItemNama(&p, "ZIRAH");
-    CEK(ketemu == 1);
-    ketemu = cariItemNama(&p, "xyz");
-    CEK(ketemu == 0);
+    found = searchItemByName(&p, "SWORD");
+    CHECK(found == 1);
+    found = searchItemByName(&p, "wood");
+    CHECK(found == 1);
+    found = searchItemByName(&p, "IRON");
+    CHECK(found == 1);
+    found = searchItemByName(&p, "xyz");
+    CHECK(found == 0);
     return 0;
 }
